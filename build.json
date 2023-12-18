@@ -3,5 +3,7 @@
     "version": "0.37",
     "type": "tarball",
     "archive": "antiword-0.37.tar.gz",
-    "make": true
+    "build": [
+        "make"
+    ]
 }
