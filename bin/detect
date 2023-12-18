@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-local buildpack_name="$(jq -r .name "$CNB_BUILDPACK_DIR/build.json")"
+buildpack_name="$(jq -r .name "$CNB_BUILDPACK_DIR/build.json")"
 echo "$buildpack_name"
 exit 0
