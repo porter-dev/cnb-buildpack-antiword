@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2155
+set -eu
+
+env_dir="$CNB_PLATFORM_DIR/env"
+
+if compgen -G "${env_dir}/*" >/dev/null; then
+    for var in ${env_dir}/*; do
+        declare "$(basename ${var})=$(<${var})"
+    done
+fi
+
+indent() {
+    sed -u "s/^/       /"
+}
+
+puts-header() {
+    echo "=====> $*"
+}
+
+puts-step() {
+    echo "-----> $*"
+}
+
+install_bin() {
+    local buildpack_name="$(jq -r .name "$CNB_BUILDPACK_DIR/build.json")"
+    local bin_version="$(jq -r .version "$CNB_BUILDPACK_DIR/build.json")"
+    local archive_name="$(jq -r .archive "$CNB_BUILDPACK_DIR/build.json")"
+    local run_make="$(jq -r .make "$CNB_BUILDPACK_DIR/build.json")"
+    local bin_name="$buildpack_name"
+
+    local buildpack_layer="$CNB_LAYERS_DIR/$buildpack_name"
+    local tarball_path="$CNB_BUILDPACK_DIR/${archive_name}"
+
+    puts-header "Printing env"
+
+    puts-header "Executing $buildpack_name buildpack"
+    if [[ -x "${buildpack_layer}/bin/${bin_name}-${bin_version}" ]]; then
+        puts-step "Using cached version ${bin_version}"
+    else
+        puts-step "Untarring ${archive_name}"
+        local install_dir="$buildpack_layer/bin"
+        rm -rf "$buildpack_layer"
+        mkdir -p "$buildpack_layer/bin"
+        tar -zxf "$tarball_path" -C "$install_dir" --strip-components=1
+
+        if [[ "$run_make" == "true" ]]; then
+            pushd "$install_dir" >/dev/null
+            puts-step "Compiling $bin_name"
+            make 2>&1 | indent
+            popd >/dev/null
+        fi
+
+        cp "$buildpack_layer/bin/$bin_name" "$buildpack_layer/bin/$bin_name-$bin_version"
+        chmod +x "$buildpack_layer/bin/$bin_name"
+    fi
+
+    puts-step "Creating launch configuration"
+    cat <<EOF >"${CNB_LAYERS_DIR}/launch.toml"
+[[processes]]
+type = "$bin_name"
+command = ["$bin_name"]
+
+[[processes]]
+type = "bash"
+command = ["/bin/bash"]
+EOF
+
+    cat <<TOML >"${buildpack_layer}.toml"
+[types]
+launch = true
+cache = true
+TOML
+}
+
+install_bin
