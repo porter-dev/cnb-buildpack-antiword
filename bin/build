@@ -32,8 +32,6 @@ install_bin() {
     local buildpack_layer="$CNB_LAYERS_DIR/$buildpack_name"
     local tarball_path="$CNB_BUILDPACK_DIR/${archive_name}"
 
-    puts-header "Printing env"
-
     puts-header "Executing $buildpack_name buildpack"
     if [[ -x "${buildpack_layer}/bin/${bin_name}-${bin_version}" ]]; then
         puts-step "Using cached version ${bin_version}"
