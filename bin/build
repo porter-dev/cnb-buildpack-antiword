@@ -27,6 +27,7 @@ install_bin() {
     local bin_version="$(jq -r .version "$CNB_BUILDPACK_DIR/build.json")"
     local archive_name="$(jq -r .archive "$CNB_BUILDPACK_DIR/build.json")"
     local run_make="$(jq -r .make "$CNB_BUILDPACK_DIR/build.json")"
+    local bin_path="$(jq -r .bin_path "$CNB_BUILDPACK_DIR/build.json")"
     local bin_name="$buildpack_name"
 
     local buildpack_layer="$CNB_LAYERS_DIR/$buildpack_name"
@@ -47,6 +48,10 @@ install_bin() {
             puts-step "Compiling $bin_name"
             make 2>&1 | indent
             popd >/dev/null
+        fi
+
+        if [[ -n "$bin_path" ]] && [[ "$bin_path" != "null" ]]; then
+            cp -f "$buildpack_layer/bin/$bin_path/$bin_name" "$buildpack_layer/bin/$bin_name"
         fi
 
         cp "$buildpack_layer/bin/$bin_name" "$buildpack_layer/bin/$bin_name-$bin_version"
