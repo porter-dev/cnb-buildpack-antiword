@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2155
+set -e
+[[ -n "$TRACE" ]] && set -x
+
+buildpack_name="$(jq -r .name "$CNB_BUILDPACK_DIR/build.json")"
+buildpack_layer="$CNB_LAYERS_DIR/$buildpack_name"
+
+mkdir -p "$buildpack_layer/profile.d"
+cat <<EOF >"$buildpack_layer/profile.d/$buildpack_name.sh"
+export ANTIWORDHOME="$buildpack_layer/Resources"
+EOF
